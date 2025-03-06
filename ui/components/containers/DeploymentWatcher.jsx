@@ -1,25 +1,11 @@
-import {
-  Box,
-  Button,
-  Container,
-  Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Link,
-  CircularProgress,
-  Alert,
-} from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import PendingIcon from "@mui/icons-material/Pending";
-import WarningIcon from "@mui/icons-material/Warning";
-import React, { useEffect, useState } from "react";
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import { ethers } from "ethers";
+import { zeroAddress } from "viem";
+
+import { useAccount, useReadContract, useWatchContractEvent } from "wagmi";
+import { Box, Container, Link, Typography } from "@mui/material";
 
 import { abis } from "@/abi";
 import {
@@ -27,141 +13,118 @@ import {
   ExplorerLink,
   getToken,
   tokenIds,
+  networkIds,
 } from "@/config/networks";
-import { useAccount, useReadContract, useWatchContractEvent } from "wagmi";
-import { ethers } from "ethers";
-import { zeroAddress } from "viem";
+import { quicksand } from "@/utils/fontHelper";
+import { tronAddress } from "@/utils/tronHelper";
 
-const DeploymentWatcher = ({
+const WatcherItem = ({ title, status, chainId, txHash }) => {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingInline: "0.5rem",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "start",
+          alignItems: "center",
+          width: "100%",
+          gap: "0.5rem",
+        }}
+      >
+        <Typography
+          variant="h3"
+          noWrap={false}
+          sx={{
+            fontWeight: "600",
+            fontSize: "1rem",
+            fontFamily: "quicksand",
+          }}
+        >
+          {title}
+        </Typography>
+
+        {status && (
+          <Link href={`${ExplorerLink(chainId)}tx\\${txHash}`} underline="none">
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: "normal",
+                fontSize: "0.85rem",
+                fontFamily: "quicksand",
+              }}
+            >
+              view on explorer
+            </Typography>
+          </Link>
+        )}
+      </Box>
+
+      <Typography
+        variant="h3"
+        noWrap={false}
+        sx={{
+          fontWeight: "normal",
+          fontSize: "1rem",
+          fontFamily: "quicksand",
+          backgroundColor: status ? "#2378ff" : "#f0f0f0",
+          borderRadius: "0.5rem",
+          width: "100px",
+          paddingBlock: "0.5rem",
+          cursor: "pointer",
+          color: status ? "white" : "black",
+        }}
+      >
+        {status ? "Done" : "Pending"}
+      </Typography>
+    </Box>
+  );
+};
+
+const DepolymentWatcher = ({
   sourceChainId,
+  ephemeralAddress,
   destChainId,
   tokenAmount,
-  ephemeralAddress,
-  recoveredAddress,
-  orderSignature,
-  permitSignature,
-  estimateGas,
-  estimateReward,
 }) => {
   // ------------------ Wagmi ------------------
   const { isConnected, address } = useAccount();
 
   // ------------------ Local States ------------------
   const [sourceDeployed, setSourceDeployed] = useState(false);
+  const [sourceDeployTx, setSourceDeployTx] = useState("");
   const [userTransferDone, setUserTransferDone] = useState(false);
-  const [sourceDeployTx, setSourceDeployTx] = useState(null);
+  const [userTransferTx, setUserTransferTx] = useState("");
+
+  const [destDeployed, setDestDeployed] = useState(false);
+  const [destDeployTx, setDestDeployTx] = useState("");
   const [fillerTransferDone, setFillerTransferDone] = useState(false);
-  const [destinationDeployed, setDestinationDeployed] = useState(false);
-  const [destDepolyTx, setDestDeployTx] = useState(null);
-  const [steps, setSteps] = useState([]);
+  const [fillerTransferTx, setFillerTransferTx] = useState("");
+
+  const [tranferFrom, setTransferFrom] = useState("");
+  const [tranferTo, setTransferTo] = useState("");
 
   // ------------------ Convert Chain IDs to Numbers ------------------
   sourceChainId = parseInt(sourceChainId, 10);
   destChainId = parseInt(destChainId, 10);
 
   // ------------------ Read Contract: bridgeData ------------------
-  const { data: bridgeData } = useReadContract({
+  const { data: bridgeData, refetch: refetchBridgeData } = useReadContract({
     address: ephemeralAddress,
     abi: abis.dualChainIntent,
     functionName: "bridgeData",
   });
 
-  // ------------------ Utility: Step Status Styles ------------------
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "ready":
-        return { backgroundColor: "#4caf50", color: "#fff" }; // Green
-      case "loading":
-        return { backgroundColor: "#ffc107", color: "#8a6d3b" }; // Yellow
-      case "error":
-        return { backgroundColor: "#f44336", color: "#fff" }; // Red
-      case "pending":
-      default:
-        return { backgroundColor: "#9e9e9e", color: "#fff" }; // Gray
-    }
-  };
-
-  // ------------------ useEffect: Update Steps Array ------------------
   useEffect(() => {
-    setSteps([
-      {
-        label: "Source Chain Deployed",
-        status: sourceDeployed ? "ready" : "pending",
-        tx: sourceDeployTx,
-        details: sourceDeployed ? (
-          <Link
-            href={`${ExplorerLink(sourceChainId)}tx\\${sourceDeployTx}`}
-            underline="hover"
-          >
-            View Source Chain Deploy Transaction
-          </Link>
-        ) : (
-          "Deployment is still pending."
-        ),
-      },
-      {
-        label: "Source Chain User Transfer",
-        status: userTransferDone ? "ready" : "pending",
-        tx: null,
-        details: userTransferDone
-          ? "User transfer completed successfully."
-          : "Awaiting user transfer...",
-      },
-      {
-        label: "Destination Chain Deployed",
-        status: destinationDeployed ? "ready" : "pending",
-        tx: destDepolyTx,
-        details: destinationDeployed ? (
-          <Link
-            href={`${ExplorerLink(destChainId)}tx\\${destDepolyTx}`}
-            underline="hover"
-          >
-            View Destination Chain Deploy Transaction
-          </Link>
-        ) : (
-          "Deployment is still pending."
-        ),
-      },
-      {
-        label: "Destination Filler Transfer",
-        status: fillerTransferDone ? "ready" : "pending",
-        tx: null,
-        details: fillerTransferDone
-          ? "Filler transfer completed successfully."
-          : "Awaiting filler transfer...",
-      },
-    ]);
-  }, [
-    sourceDeployed,
-    userTransferDone,
-    destinationDeployed,
-    fillerTransferDone,
-    sourceDeployTx,
-    destDepolyTx,
-    sourceChainId,
-    destChainId,
-  ]);
-
-  // ------------------ Contract Events: Watchers ------------------
-
-  // 1) Source Intent Deploy Watcher
-  try {
-    useWatchContractEvent({
-      address: getContractAddress(sourceChainId, "intentFactory"),
-      chainId: sourceChainId,
-      abi: abis.intentFactory,
-      eventName: "IntentDeployed",
-      onLogs(logs) {
-        console.log("SourceChainIntent: ", logs);
-        if (logs.length) {
-          setSourceDeployed(true);
-          setSourceDeployTx(logs[0].transactionHash);
-        }
-      },
-    });
-  } catch (e) {
-    console.log("Error setting Source Watcher:", e);
-  }
+    if (destDeployTx) {
+      refetchBridgeData();
+    }
+  }, [destDeployTx]);
 
   // 2) Destination Intent Deploy Watcher
   try {
@@ -173,46 +136,13 @@ const DeploymentWatcher = ({
       onLogs(logs) {
         console.log("DestChainIntent: ", logs);
         if (logs.length) {
-          setDestinationDeployed(true);
+          setDestDeployed(true);
           setDestDeployTx(logs[0].transactionHash);
         }
       },
     });
   } catch (e) {
     console.log("Error setting Destination Watcher:", e);
-  }
-
-  // 3) User Transfer Watcher
-  try {
-    useWatchContractEvent({
-      address: getToken(sourceChainId, tokenIds.usdt).address,
-      chainId: sourceChainId,
-      abi: abis.erc20,
-      args: {
-        from: address?.toLowerCase() || "",
-        to: ephemeralAddress?.toLowerCase() || "",
-      },
-      eventName: "Transfer",
-      onLogs(logs) {
-        if (logs.length) {
-          console.log("User Token Transfer: ", logs);
-          logs.forEach((log) => {
-            const from = log.args.from.toLowerCase();
-            const to = log.args.to.toLowerCase();
-            const value = log.args.value;
-            if (
-              from === address?.toLowerCase() &&
-              to === ephemeralAddress?.toLowerCase() &&
-              value == ethers.parseEther(tokenAmount)
-            ) {
-              setUserTransferDone(true);
-            }
-          });
-        }
-      },
-    });
-  } catch (e) {
-    console.log("Error setting User Transfer Watcher:", e);
   }
 
   // 4) Filler Transfer Watcher
@@ -231,18 +161,30 @@ const DeploymentWatcher = ({
           const fillerAddress = bridgeData
             ? bridgeData[0].toLowerCase()
             : zeroAddress;
+          const beneficiary = bridgeData
+            ? bridgeData[5].toLowerCase()
+            : zeroAddress;
 
           logs.forEach((log) => {
             const from = log.args.from.toLowerCase();
             const to = log.args.to.toLowerCase();
 
-            console.log("From filter: ", from);
-            console.log("To filter: ", to);
-            console.log("Filler address: ", fillerAddress);
+            console.log(from);
+            console.log(to);
+            console.log(fillerAddress);
+            console.log(beneficiary);
+            console.log(sourceChainId);
+            console.log(networkIds.nile);
 
-            if (from === fillerAddress && to === address?.toLowerCase()) {
-              // Fix: set filler transfer done
-              setFillerTransferDone(true);
+            if (sourceChainId !== networkIds.nile) {
+              if (from === fillerAddress && to === beneficiary) {
+                // Fix: set filler transfer done
+                setFillerTransferDone(true);
+                setFillerTransferTx(logs[0].transactionHash);
+              }
+            } else {
+              setTranferFrom(from);
+              setTransferTo(to);
             }
           });
         }
@@ -252,219 +194,181 @@ const DeploymentWatcher = ({
     console.log("Error setting Filler Transfer Watcher:", e);
   }
 
-  // ------------------ Render ------------------
+  // ------------------ Contract Events: Watchers ------------------
+  if (sourceChainId != networkIds.nile) {
+    // 1) Source Intent Deploy Watcher
+    try {
+      useWatchContractEvent({
+        address: getContractAddress(sourceChainId, "intentFactory"),
+        chainId: sourceChainId,
+        abi: abis.intentFactory,
+        eventName: "IntentDeployed",
+        onLogs(logs) {
+          console.log("SourceChainIntent: ", logs);
+          if (logs.length) {
+            setSourceDeployed(true);
+            setSourceDeployTx(logs[0].transactionHash);
+          }
+        },
+      });
+    } catch (e) {
+      console.log("Error setting Source Watcher:", e);
+    }
+
+    // 3) User Transfer Watcher
+    try {
+      useWatchContractEvent({
+        address: getToken(sourceChainId, tokenIds.usdt).address,
+        chainId: sourceChainId,
+        abi: abis.erc20,
+        args: {
+          from: address?.toLowerCase() || "",
+          to: ephemeralAddress?.toLowerCase() || "",
+        },
+        eventName: "Transfer",
+        onLogs(logs) {
+          if (logs.length) {
+            console.log("User Token Transfer: ", logs);
+            logs.forEach((log) => {
+              const from = log.args.from.toLowerCase();
+              const to = log.args.to.toLowerCase();
+              const value = log.args.value;
+
+              if (
+                from === address?.toLowerCase() &&
+                to === ephemeralAddress?.toLowerCase() &&
+                value === tokenAmount
+              ) {
+                setUserTransferDone(true);
+                setUserTransferTx(logs[0].transactionHash);
+              }
+            });
+          }
+        },
+      });
+    } catch (e) {
+      console.log("Error setting User Transfer Watcher:", e);
+    }
+  }
+
+  useEffect(() => {
+    if (sourceChainId === networkIds.nile) {
+      // In the case of tron bridging
+      let factoryInterval = setInterval(async () => {
+        try {
+          const intentContract = window.tron.tronWeb.contract(
+            abis.dualChainIntent,
+            tronAddress(ephemeralAddress)
+          );
+
+          if (intentContract.deployed === true) {
+            // state
+            if (!sourceDeployed) setSourceDeployed(true);
+            //setSourceDeployTx(events[i].transaction);
+
+            const originCompleted = await intentContract
+              .originCompleted()
+              .call();
+            if (originCompleted === true) {
+              setUserTransferDone(true);
+              setFillerTransferDone(true);
+              clearInterval(factoryInterval);
+              factoryInterval = null;
+            }
+          }
+        } catch (err) {}
+      }, 1000 * 5);
+
+      return () => {
+        if (factoryInterval) clearInterval(factoryInterval);
+      };
+    }
+  }, []);
+
   return (
     <Container
       maxWidth="md"
       sx={{
-        p: 4,
-        border: "1px solid #ccc",
-        borderRadius: 2,
-        boxShadow: 3,
-        bgcolor: "background.paper",
-        textAlign: "left",
+        border: "none",
+        borderRadius: 4,
+        background: "rgb(255 , 255 , 255)",
+        p: 3,
       }}
     >
-      <Typography
-        variant="h5"
-        sx={{ fontWeight: "bold", textTransform: "uppercase", mb: 3 }}
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          border: "none",
+          gap: 3,
+        }}
       >
-        Deployment & Bridging Process
-      </Typography>
-
-      {/* Accordion 1: Permit Signing */}
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            Permit Signing
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Alert severity="success" sx={{ my: 2 }}>
-            Successfully signed the permit!
-          </Alert>
-          <Box sx={{ py: 1 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            flexDirection="column"
+            justifyContent="center"
+            alignItems="start"
+            gap={1}
+          >
             <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              sx={{ textTransform: "uppercase" }}
-              fontWeight={500}
-              gutterBottom
+              variant="h4"
+              className={quicksand.className}
+              sx={{
+                fontSize: "1.25rem",
+                fontWeight: "800",
+              }}
             >
-              Order Signature
+              Observe deployment
             </Typography>
             <Typography
-              variant="body2"
-              sx={{ wordBreak: "break-all" }}
-              fontWeight={500}
+              variant="h4"
+              className={quicksand.className}
+              sx={{
+                fontSize: "1rem",
+              }}
             >
-              {orderSignature}
+              Observing intent deployment and token transfers.
             </Typography>
           </Box>
-          <Box sx={{ py: 1 }}>
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              sx={{ textTransform: "uppercase" }}
-              fontWeight={500}
-              gutterBottom
-            >
-              Permit Signature
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{ wordBreak: "break-all" }}
-              fontWeight={500}
-            >
-              {permitSignature}
-            </Typography>
-          </Box>
-          <Box sx={{ py: 1 }}>
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              sx={{ textTransform: "uppercase" }}
-              gutterBottom
-            >
-              Ephemeral Address
-            </Typography>
-            <Typography variant="body2" fontWeight={500}>
-              {ephemeralAddress}
-            </Typography>
-          </Box>
-          <Box sx={{ py: 1 }}>
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              sx={{ textTransform: "uppercase" }}
-              gutterBottom
-            >
-              Recovered Address
-            </Typography>
-            <Typography variant="body2">{recoveredAddress}</Typography>
-          </Box>
-          <Box sx={{ py: 1 }}>
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              sx={{ textTransform: "uppercase" }}
-              gutterBottom
-            >
-              Estimated Filler Gas
-            </Typography>
-            <Typography variant="body2">{estimateGas} Gwei</Typography>
-          </Box>
-          <Box sx={{ py: 1 }}>
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              sx={{ textTransform: "uppercase" }}
-              gutterBottom
-            >
-              Estimated Filler Reward
-            </Typography>
-            <Typography variant="body2">{estimateReward} USDT</Typography>
-          </Box>
-        </AccordionDetails>
-      </Accordion>
-
-      {/* Accordion 2: Deployment & Bridging Steps */}
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            Steps Overview
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          {steps.map((step, index) => (
-            <Accordion key={index} sx={{ mb: 2 }}>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Box display="flex" alignItems="center">
-                  {/* Circle Number */}
-                  <Box
-                    sx={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: "50%",
-                      bgcolor: "primary.main",
-                      color: "white",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mr: 2,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {index + 1}
-                  </Box>
-                  <Typography variant="body1">{step.label}</Typography>
-                </Box>
-                <Box
-                  sx={{
-                    px: 2,
-                    display: "flex",
-                    borderRadius: "15px",
-                    fontSize: "0.875rem",
-                    ml: "auto",
-                    mr: 2,
-                    textAlign: "center",
-                    alignItems: "center",
-                    ...getStatusStyle(step.status),
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {step.status.charAt(0).toUpperCase() + step.status.slice(1)}
-                  </Typography>
-                </Box>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography variant="body2">{step.details}</Typography>
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </AccordionDetails>
-      </Accordion>
-
-      {/* Mock Buttons */}
-      <Box sx={{ my: 3 }}>
-        <Typography variant="h6" sx={{ mb: 1 }}>
-          Simulate State Changes
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mr: 2, mb: 1 }}
-          onClick={() => setSourceDeployed(!sourceDeployed)}
+        </Box>
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
         >
-          Toggle Source Deployed
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mr: 2, mb: 1 }}
-          onClick={() => setUserTransferDone(!userTransferDone)}
-        >
-          Toggle User Transfer
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mr: 2, mb: 1 }}
-          onClick={() => setDestinationDeployed(!destinationDeployed)}
-        >
-          Toggle Destination Deployed
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mb: 1 }}
-          onClick={() => setFillerTransferDone(!fillerTransferDone)}
-        >
-          Toggle Filler Transfer
-        </Button>
+          <WatcherItem
+            title={"Source Chain Deployed"}
+            status={sourceDeployed}
+            chainId={sourceChainId}
+            txHash={sourceDeployTx}
+          />
+          <WatcherItem
+            title={"Destination Chain Deployed"}
+            status={destDeployed}
+            chainId={destChainId}
+            txHash={destDeployTx}
+          />
+          <WatcherItem
+            title={"Source Chain User Transfer"}
+            status={userTransferDone}
+            chainId={sourceChainId}
+            txHash={userTransferTx}
+          />
+          <WatcherItem
+            title={"Destination Filler Transfer"}
+            status={fillerTransferDone}
+            chainId={destChainId}
+            txHash={fillerTransferTx}
+          />
+        </Box>
       </Box>
     </Container>
   );
 };
 
-export default DeploymentWatcher;
+export default DepolymentWatcher;

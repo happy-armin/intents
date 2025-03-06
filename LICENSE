@@ -1,21 +1,121 @@
-MIT License
+# Trustless Supercomputing S.V. Business Source License (Version 1.0)
 
-Copyright (c) 2025 Colorful Notion
+**Date of License:** January 1, 2025 
+**Licensor:** Trustless Supercomputing S.V.  
+**Licensed Work:** USD.SV
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## 1. Definitions
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1.1. **“Licensed Work”**  
+&emsp;The software (including any modifications or derivative works) distributed under this License by the Licensor, as specified above.
+
+1.2. **“Licensee”**  
+&emsp;An individual or legal entity exercising rights under this License.
+
+1.3. **“Non-Production Use”**  
+&emsp;Use of the Licensed Work for internal testing, development, research, experimentation, or other non-commercial activities — **excluding** any activity that provides services or software in a commercial, for-profit, or production environment.
+
+1.4. **“Production Use”**  
+&emsp;Any operation of the Licensed Work for commercial or for-profit purposes, including (but not limited to) providing paid services, or incorporating the Licensed Work into a commercial product or service that is accessed by end users or customers.
+
+1.5. **“Change Date”**  
+&emsp;Three (3) years from the Effective Date. After this date, the Additional Use Grant (Section 3.4) automatically applies.
+
+
+## 2. License Grant
+
+Subject to the terms and conditions of this License, Licensor hereby grants Licensee the following limited rights:
+
+### 2.1. Non-Production Use
+
+- Licensee may download, reproduce, display, modify, and distribute the Licensed Work solely for Non-Production Use, free of charge.
+
+### 2.2. Production Use Prior to the Change Date
+
+- **Restricted**: Unless otherwise granted in writing by Licensor, Licensee **must not** use the Licensed Work for Production Use prior to the Change Date.
+- To obtain permission for Production Use before the Change Date, Licensee must secure a separate commercial use license or written consent from Licensor.
+
+### 2.3. Production Use After the Change Date
+
+- Subject to Section 3.4 (Additional Use Grant), on and after the Change Date, Licensee may use the Licensed Work for any lawful purpose, including Production Use, under the terms of the Additional Use Grant that replaces or supplements this section.
+
+
+## 3. Limitations and Conditions
+
+### 3.1. No Sublicensing Prior to the Change Date
+
+- Licensee may not grant sublicenses for Production Use of the Licensed Work to third parties prior to the Change Date unless explicitly authorized by the Licensor.
+
+### 3.2. No Circumvention
+
+- Licensee may not circumvent or attempt to circumvent the restrictions set forth in this License, including by combining the Licensed Work with other software or technologies in a manner designed to evade the Production Use restriction.
+
+### 3.3. License Notices
+
+- Licensee must retain and reproduce all copyright, patent, trademark, and other notices that appear in the Licensed Work in all copies or substantial portions of the Licensed Work.
+- Licensee must include a copy of this License (or its URL) and the following attribution notice in any distribution of the Licensed Work:
+Licensed under the Trustless Supercomputing S.V. Business Source License (Version 1.0).
+
+
+### 3.4. Additional Use Grant (Change Date Release)
+
+- On or after the Change Date, the Licensed Work is automatically made available under the following open-source terms: [Insert chosen open-source license, e.g., Apache-2.0, MIT, GPLv3, etc.] (the “Additional Use Grant”).
+- Once the Additional Use Grant becomes effective, it supersedes the Production Use restriction in Section 2.2 for all Licensees. Any copy of the Licensed Work or derivative made available by the Licensor after the Change Date must be provided under the Additional Use Grant.
+
+
+## 4. Contributions
+
+### 4.1. Contribution License
+
+- If Licensee submits any changes, enhancements, or other modifications (“Contributions”) to the Licensor or the Licensed Work, Licensee grants to the Licensor and to subsequent Licensees a non-exclusive, worldwide, royalty-free, perpetual, irrevocable license to reproduce, prepare derivative works of, publicly display, publicly perform, distribute, and sublicense such Contributions as part of the Licensed Work.
+
+
+## 5. Disclaimer of Warranty
+
+- **THE LICENSED WORK IS PROVIDED “AS IS,” WITHOUT WARRANTY OF ANY KIND**, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, or non-infringement.
+- Licensor disclaims any liability for damages related to the Licensed Work to the maximum extent permitted by applicable law.
+
+
+## 6. Limitation of Liability
+
+- To the fullest extent permitted by law, under no circumstances shall Licensor or its affiliates be liable for any indirect, incidental, consequential, special, or exemplary damages, arising under this License or out of the use or inability to use the Licensed Work, even if advised of the possibility of such damages.
+
+
+## 7. Termination
+
+### 7.1. Termination for Violation
+
+- If Licensee breaches the terms of this License, Licensor may, at its sole discretion, terminate this License immediately upon notice to Licensee.
+- Upon termination, Licensee must cease all use of the Licensed Work, including any Production Use, and destroy all copies of the Licensed Work or provide evidence of such destruction.
+
+### 7.2. Survival
+
+- All provisions regarding disclaimers of warranties, limitation of liability, and any other provision that by its nature should survive shall survive termination of this License.
+
+
+## 8. General
+
+### 8.1. Relationship of Parties
+
+- This License does not create any agency, partnership, joint venture, or employment relationship.
+
+### 8.2. Entire Agreement
+
+- This License constitutes the entire agreement between Licensee and Licensor relating to the Licensed Work and supersedes all prior or contemporaneous agreements concerning its subject matter.
+
+### 8.3. Governing Law
+
+- This License shall be governed by and construed in accordance with the laws of **El Salvador**, without regard to conflict of laws principles.
+- Any dispute arising out of or in connection with this License shall be subject to the exclusive jurisdiction of the courts located in **El Salvador**.
+
+### 8.4. Severability
+
+- If any provision of this License is held to be unenforceable, invalid, or illegal, the remaining provisions shall continue in full force and effect.
+
+### 8.5. Amendments
+
+- This License may not be amended except through a written instrument signed by an authorized representative of the Licensor.
+
+
+**IN WITNESS WHEREOF**, Licensor has caused this License to be executed by its duly authorized representative as of the Effective Date.

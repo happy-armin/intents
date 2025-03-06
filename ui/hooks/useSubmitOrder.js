@@ -2,16 +2,25 @@ import { useEffect } from "react";
 import { ethers } from "ethers";
 import { IS_TEST } from "@/config/constants";
 import { apiService } from "@/services/apiService";
+import { PermIdentity } from "@mui/icons-material";
 
 export function useSubmitOrder(
   orderSignature,
   permitSignature,
-  intentOrder,
-  permitData
+  orderData,
+  permitData,
+  process
 ) {
   useEffect(() => {
     (async () => {
-      if (orderSignature && permitSignature && intentOrder && permitData) {
+      if (
+        orderSignature &&
+        permitSignature &&
+        orderData &&
+        permitData &&
+        process === 4
+      ) {
+        console.log("useSubmitOrder");
         try {
           const orderRawbytes = ethers.AbiCoder.defaultAbiCoder().encode(
             [
@@ -25,14 +34,14 @@ export function useSubmitOrder(
               "bytes",
             ],
             [
-              intentOrder.intentAddress,
-              intentOrder.user,
-              intentOrder.nonce,
-              intentOrder.sourceChainId,
-              intentOrder.openDeadline,
-              intentOrder.fillDeadline,
-              intentOrder.orderDataType,
-              intentOrder.orderData,
+              orderData.intentAddress,
+              orderData.user,
+              orderData.nonce,
+              orderData.sourceChainId,
+              orderData.openDeadline,
+              orderData.fillDeadline,
+              orderData.orderDataType,
+              orderData.orderData,
             ]
           );
 
@@ -47,6 +56,13 @@ export function useSubmitOrder(
             ]
           );
 
+          console.log("orderData: " + orderRawbytes);
+          console.log("permitData: " + permitRawbytes);
+          console.log("orderSignature: " + orderSignature);
+          console.log("permitSignature: " + permitSignature);
+          console.log(orderData);
+          console.log(permitData);
+
           if (!IS_TEST) {
             await apiService.submitOrder({
               permitsignature: permitSignature,
@@ -56,9 +72,9 @@ export function useSubmitOrder(
             });
           }
         } catch (err) {
-          console.error("Error posting signature:", err);
+          console.log("Error posting signature:", err);
         }
       }
     })();
-  }, [orderSignature, permitSignature, intentOrder, permitData]);
+  }, [process]);
 }

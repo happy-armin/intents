@@ -1,110 +1,114 @@
-import React from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-} from "@mui/material";
-import Link from "next/link";
-import Image from "next/image";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward"; // Import an icon from Material-UI
+"use client";
 
-const Home = () => {
+import React, { useEffect, useState } from "react";
+import { Box, Container } from "@mui/material";
+
+import BridgeToken from "@/components/containers/BridgeToken";
+import useSignOrder from "@/hooks/useSignOrder";
+import useSignPermit from "@/hooks/useSignPermit";
+import DeploymentWatcher from "@/components/containers/DeploymentWatcher";
+import { useSubmitOrder } from "@/hooks/useSubmitOrder";
+import { BridgeDataHelper } from "@/utils/typeHelper";
+
+const SignerPage = () => {
+  // Require variables for submitSignatures (order data, order signature, permit data, permit signature)
+  const [orderData, setOrderData] = useState(null);
+  const [permitData, setPermitData] = useState(null);
+  const [observeData, setObserveData] = useState(null);
+  const [userSignProcess, setUserSignProcess] = useState(0);
+
+  // -------------------- start sign order & permit --------------------
+  const { doSignOrder, orderIsError, orderIsSuccess, orderSignedData } =
+    useSignOrder(orderData);
+
+  const { doSignPermit, permitIsError, permitIsSuccess, permitSignedData } =
+    useSignPermit(orderData, permitData);
+
+  const handleSign = (order, permit) => {
+    setOrderData(order);
+    setPermitData(permit);
+
+    // calculate deployment watcher parameters
+    const sourceChainId = order.sourceChainId;
+    const ephemeralAddress = order.intentAddress;
+    const destChainId = BridgeDataHelper.getDecodedBridgeData(
+      order.orderData
+    ).destinationChainId;
+    const tokenAmount = BridgeDataHelper.getDecodedBridgeData(
+      order.orderData
+    ).amount;
+
+    setObserveData({
+      sourceChainId,
+      ephemeralAddress,
+      destChainId,
+      tokenAmount,
+    });
+
+    setUserSignProcess(1); // user sign process (request to sign order)
+  };
+
+  useEffect(() => {
+    if (userSignProcess === 1) {
+      doSignOrder();
+      setUserSignProcess(2); // user sign process (request to sign permit)
+    } else if (userSignProcess === 2) {
+      if (orderIsSuccess) {
+        doSignPermit();
+        setUserSignProcess(3); // user sign process (request to observe)
+      }
+      if (orderIsError) {
+        setUserSignProcess(0); // user sign process (request to reset)
+      }
+    } else if (userSignProcess === 3) {
+      if (permitIsSuccess) {
+        setUserSignProcess(4); // submit to server
+      }
+      if (permitIsError) {
+        setUserSignProcess(0); // user sign process (request to reset)
+      }
+    }
+  }, [
+    userSignProcess,
+    orderIsSuccess,
+    orderIsError,
+    permitIsSuccess,
+    permitIsError,
+  ]);
+
+  useSubmitOrder(
+    orderSignedData,
+    permitSignedData,
+    orderData,
+    permitData,
+    userSignProcess
+  );
+  // -------------------- end sign order & permit --------------------
+
   return (
     <Box
       sx={{
-        maxWidth: "lg",
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        alignItems: "center",
-        justifyContent: "center",
+        flexDirection: "column",
         backgroundColor: "transparent",
-        minHeight: "80vh",
-        gap: 1,
-        px: 3,
+        textAlign: "center",
+        px: 2,
       }}
     >
-      {/* Left Section: List */}
-      <Box
+      <Container
+        maxWidth="lg"
         sx={{
-          flex: 2,
-          maxWidth: { xs: "100%", md: "50%" },
-          textAlign: "left",
-        }}
-      >
-        <Typography variant="h3" gutterBottom sx={{ fontWeight: "bold" }}>
-          Intent-Based Cross-Chain Bridge Demo
-        </Typography>
-        <Typography variant="h6" sx={{ mb: 1 }}>
-          This is a sample UI to demonstrate how a user can:
-        </Typography>
-
-        <List>
-          {[
-            "Sign an intent (order)",
-            "Transfer funds to the ephemeral intent address",
-            "Observe contract deployments on source/destination",
-            "View final bridging on the destination chain",
-          ].map((item, index) => (
-            <ListItem key={index} disablePadding>
-              <ListItemText
-                primary={`${index + 1}. ${item}`}
-                primaryTypographyProps={{
-                  variant: "body1",
-                }}
-              />
-            </ListItem>
-          ))}
-        </List>
-
-        {/* Call-to-Action Button */}
-        <Link href="/signer" passHref>
-          <Button
-            variant="contained"
-            size="large"
-            endIcon={<ArrowForwardIcon />} // Add icon on the right
-            sx={{
-              mt: 1,
-              backgroundColor: "#D87068", // Custom button color
-              color: "#fff",
-              "&:hover": { backgroundColor: "#c76058" }, // Hover effect
-              fontSize: "16px",
-              fontWeight: "bold",
-              borderRadius: "8px",
-              textTransform: "none",
-            }}
-          >
-            Start the Flow
-          </Button>
-        </Link>
-      </Box>
-
-      {/* Right Section: Image */}
-      <Box
-        sx={{
-          flex: 1,
-          maxWidth: { xs: "100%", md: "50%" },
           display: "flex",
-          justifyContent: "center",
+          flexDirection: "column",
           alignItems: "center",
+          gap: 4,
         }}
       >
-        <Image
-          src="/home-img-1.png" // Image path
-          alt="Home Demo"
-          width={600}
-          height={600}
-          style={{
-            maxWidth: "100%",
-            height: "auto",
-            borderRadius: "8px",
-          }}
-        />
-      </Box>
+        <BridgeToken handleSign={handleSign} />
+        {userSignProcess === 4 && <DeploymentWatcher {...observeData} />}
+      </Container>
     </Box>
   );
 };
 
-export default Home;
+export default SignerPage;

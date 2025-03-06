@@ -11,4 +11,12 @@ export const apiService = {
     const response = await axiosInstance.post("/", data);
     return response.data;
   },
+  tokenPrice: async (url) => {
+    const priceAxiosInstance = axios.create({
+      baseURL: url,
+    });
+
+    const response = await priceAxiosInstance.get("/");
+    return response.data;
+  },
 };
