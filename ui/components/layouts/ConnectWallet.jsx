@@ -20,8 +20,10 @@ const TronConnectButton = () => {
 
   const handleClick = async () => {
     if (!connected) {
-      select("TronLink");
-      connect();
+      try {
+        select("TronLink");
+        connect();
+      } catch (error) {}
     } else {
       disconnect();
     }

@@ -207,6 +207,8 @@ const useOrderData = (manualRequest) => {
         getBridgeData()
       );
 
+      console.log("bridge data: ", getBridgeData());
+
       const currentTimeStamp = Math.floor(Date.now() / 1000);
       setOrderData({
         intentAddress: "0x0000000000000000000000000000000000000000",

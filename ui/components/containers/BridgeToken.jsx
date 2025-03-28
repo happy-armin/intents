@@ -19,6 +19,7 @@ import { getTokenPrice } from "@/utils/tokenPriceHelper";
 import { getTokens, networkIds } from "@/config/networks";
 import useOrderData from "@/hooks/useOrderData";
 import { DeadlineData } from "@/config/constants";
+import { useWallet } from "@tronweb3/tronwallet-adapter-react-hooks";
 
 const BridgeToken = ({ handleSign }) => {
   // useOrderData hook for constructing user sign data with given input
@@ -38,17 +39,28 @@ const BridgeToken = ({ handleSign }) => {
   // wagmi hooks for account and chain select
   const { isConnected, chain: currentChain } = useAccount();
   const { chains, switchChain, isLoading } = useSwitchChain();
+  const [fChains, setFChains] = useState([]);
+
+  const { connected } = useWallet();
 
   useEffect(() => {
     if (chains) {
-      if (chains.length < 4) {
-        chains.push({
-          id: 3448148188,
-          name: "Nile",
-        });
-      }
+      console.log("tronlink connected", connected);
+      setFChains([
+        ...chains,
+        ...(connected
+          ? [
+              {
+                id: networkIds.nile,
+                name: "Nile",
+              },
+            ]
+          : []),
+      ]);
+    } else {
+      setFChains([]);
     }
-  }, [chains]);
+  }, [chains, connected]);
 
   // const variable for connected current chain
   const isChainConnected = !isLoading && isConnected;
@@ -189,7 +201,7 @@ const BridgeToken = ({ handleSign }) => {
             <ChainSelect
               chain={values.sourceChain}
               setChain={handlers.setSourceChain}
-              chains={chains.filter((chain) => {
+              chains={fChains.filter((chain) => {
                 return (
                   values.destChain === null || chain.id !== values.destChain.id
                 );
@@ -347,7 +359,7 @@ const BridgeToken = ({ handleSign }) => {
             <ChainSelect
               chain={values.destChain}
               setChain={handlers.setDestChain}
-              chains={chains.filter((chain) => {
+              chains={fChains.filter((chain) => {
                 return (
                   values.sourceChain === null ||
                   values.sourceChain === undefined ||

@@ -8,7 +8,8 @@ export const isTronChain = (chain) => {
   );
 };
 
-export const hexAddress = (address) => {
+export const hexAddress = (tAddress = "") => {
+  const address = tAddress || "";
   if (address.startsWith("T")) {
     return "0x" + TronWeb.address.toHex(address).substring(2);
   } else if (address.startsWith("41")) {

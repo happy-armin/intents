@@ -47,8 +47,8 @@ const knownNetworks = {
 const knownContracts = {
   intentFactory: {
     [networkIds.sepolia]: "0xED98C7acC5d974D2bDcA426bf0B9dE8ceE2E3972",
-    [networkIds.ink]: "0x9065Bd9D33770B38cDAf0761Bc626cf5fA45ae68",
-    [networkIds.opstack]: "0x9065Bd9D33770B38cDAf0761Bc626cf5fA45ae68",
+    [networkIds.ink]: "0xF6e88089371f875620Ad4D287E375E40DFDF7b89",
+    [networkIds.opstack]: "0xED98C7acC5d974D2bDcA426bf0B9dE8ceE2E3972",
     [networkIds.nile]: "TDkT1GLv9hcKSDDr4o3UV1fCSidDB2DXQb",
   },
 };

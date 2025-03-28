@@ -17,7 +17,9 @@ import {
 } from "@/config/networks";
 import { quicksand } from "@/utils/fontHelper";
 import { tronAddress } from "@/utils/tronHelper";
+import { SALT } from "@/config/constants";
 
+//aaa
 const WatcherItem = ({ title, status, chainId, txHash }) => {
   return (
     <Box
@@ -86,11 +88,13 @@ const WatcherItem = ({ title, status, chainId, txHash }) => {
   );
 };
 
-const DepolymentWatcher = ({
+const DeploymentWatcher = ({
   sourceChainId,
   ephemeralAddress,
   destChainId,
   tokenAmount,
+  orderData,
+  intentFactoryTron,
 }) => {
   // ------------------ Wagmi ------------------
   const { isConnected, address } = useAccount();
@@ -126,72 +130,74 @@ const DepolymentWatcher = ({
     }
   }, [destDeployTx]);
 
-  // 2) Destination Intent Deploy Watcher
-  try {
-    useWatchContractEvent({
-      address: getContractAddress(destChainId, "intentFactory"),
-      chainId: destChainId,
-      abi: abis.intentFactory,
-      eventName: "IntentDeployed",
-      onLogs(logs) {
-        console.log("DestChainIntent: ", logs);
-        if (logs.length) {
-          setDestDeployed(true);
-          setDestDeployTx(logs[0].transactionHash);
-        }
-      },
-    });
-  } catch (e) {
-    console.log("Error setting Destination Watcher:", e);
-  }
+  if (destChainId != networkIds.nile) {
+    // 2) Destination Intent Deploy Watcher
+    try {
+      useWatchContractEvent({
+        address: getContractAddress(destChainId, "intentFactory"),
+        chainId: destChainId,
+        abi: abis.intentFactory,
+        eventName: "IntentDeployed",
+        onLogs(logs) {
+          console.log("DestChainIntent: ", logs);
+          if (logs.length) {
+            setDestDeployed(true);
+            setDestDeployTx(logs[0].transactionHash);
+          }
+        },
+      });
+    } catch (e) {
+      console.log("Error setting Destination Watcher:", e);
+    }
 
-  // 4) Filler Transfer Watcher
-  try {
-    useWatchContractEvent({
-      address: getToken(destChainId, tokenIds.usdt).address,
-      chainId: destChainId,
-      abi: abis.erc20,
-      args: {
-        to: address?.toLowerCase() || "",
-      },
-      eventName: "Transfer",
-      onLogs(logs) {
-        if (logs.length) {
-          console.log("Filler Token Transfer: ", logs);
-          const fillerAddress = bridgeData
-            ? bridgeData[0].toLowerCase()
-            : zeroAddress;
-          const beneficiary = bridgeData
-            ? bridgeData[5].toLowerCase()
-            : zeroAddress;
+    // 4) Filler Transfer Watcher
+    try {
+      useWatchContractEvent({
+        address: getToken(destChainId, tokenIds.usdt).address,
+        chainId: destChainId,
+        abi: abis.erc20,
+        args: {
+          to: address?.toLowerCase() || "",
+        },
+        eventName: "Transfer",
+        onLogs(logs) {
+          if (logs.length) {
+            console.log("Filler Token Transfer: ", logs);
+            const fillerAddress = bridgeData
+              ? bridgeData[0].toLowerCase()
+              : zeroAddress;
+            const beneficiary = bridgeData
+              ? bridgeData[5].toLowerCase()
+              : zeroAddress;
 
-          logs.forEach((log) => {
-            const from = log.args.from.toLowerCase();
-            const to = log.args.to.toLowerCase();
+            logs.forEach((log) => {
+              const from = log.args.from.toLowerCase();
+              const to = log.args.to.toLowerCase();
 
-            console.log(from);
-            console.log(to);
-            console.log(fillerAddress);
-            console.log(beneficiary);
-            console.log(sourceChainId);
-            console.log(networkIds.nile);
+              console.log(from);
+              console.log(to);
+              console.log(fillerAddress);
+              console.log(beneficiary);
+              console.log(sourceChainId);
+              console.log(networkIds.nile);
 
-            if (sourceChainId !== networkIds.nile) {
-              if (from === fillerAddress && to === beneficiary) {
-                // Fix: set filler transfer done
-                setFillerTransferDone(true);
-                setFillerTransferTx(logs[0].transactionHash);
+              if (sourceChainId !== networkIds.nile) {
+                if (from === fillerAddress && to === beneficiary) {
+                  // Fix: set filler transfer done
+                  setFillerTransferDone(true);
+                  setFillerTransferTx(logs[0].transactionHash);
+                }
+              } else {
+                setTranferFrom(from);
+                setTransferTo(to);
               }
-            } else {
-              setTranferFrom(from);
-              setTransferTo(to);
-            }
-          });
-        }
-      },
-    });
-  } catch (e) {
-    console.log("Error setting Filler Transfer Watcher:", e);
+            });
+          }
+        },
+      });
+    } catch (e) {
+      console.log("Error setting Filler Transfer Watcher:", e);
+    }
   }
 
   // ------------------ Contract Events: Watchers ------------------
@@ -252,6 +258,56 @@ const DepolymentWatcher = ({
   }
 
   useEffect(() => {
+    if (destChainId === networkIds.nile) {
+      console.log(intentFactoryTron);
+
+      let factoryInterval = setInterval(async () => {
+        try {
+          console.log(orderData);
+          const intentAddress = await intentFactoryTron
+            .getIntentAddress(
+              Object.values({
+                ...orderData,
+                intentAddress: "0x0000000000000000000000000000000000000000",
+              }),
+              ethers.id(SALT)
+            )
+            .call();
+
+          console.log("intentAddress", intentAddress);
+
+          const intentContract = window.tron.tronWeb.contract(
+            abis.dualChainIntent,
+            tronAddress(intentAddress)
+          );
+
+          console.log("intentContract", intentContract);
+
+          if (intentContract.deployed === true) {
+            // state
+            if (!sourceDeployed) setDestDeployed(true);
+            //setSourceDeployTx(events[i].transaction);
+
+            const destinationFulfilled = await intentContract
+              .destinationFulfilled()
+              .call();
+            if (destinationFulfilled === true) {
+              setUserTransferDone(true);
+              setFillerTransferDone(true);
+              clearInterval(factoryInterval);
+              factoryInterval = null;
+            }
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      }, 1000 * 5);
+
+      return () => {
+        if (factoryInterval) clearInterval(factoryInterval);
+      };
+    }
+
     if (sourceChainId === networkIds.nile) {
       // In the case of tron bridging
       let factoryInterval = setInterval(async () => {
@@ -371,4 +427,4 @@ const DepolymentWatcher = ({
   );
 };
 
-export default DepolymentWatcher;
+export default DeploymentWatcher;

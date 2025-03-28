@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSignTypedData } from "wagmi";
 import { getContractAddress } from "@/config/networks";
-import { isTronChain } from "@/utils/tronHelper";
+import { isTronChain, tronAddress } from "@/utils/tronHelper";
 
 const useSignOrder = (orderData) => {
   const [orderSignedData, setOrderSignedData] = useState(null);
@@ -81,11 +81,21 @@ const useSignOrder = (orderData) => {
 
   const doTronSignOrder = () => {
     try {
+      console.log("orderDomain: ", orderDomain);
+      console.log("orderType: ", orderType);
+      console.log("orderData: ", orderData);
+      const tOrderData = {
+        ...orderData,
+        intentAddress: tronAddress(orderData.intentAddress),
+        user: tronAddress(orderData.user),
+      };
+      console.log("tOrderData: ", tOrderData);
+
       const sign = async () => {
         const signature = await window.tron.tronWeb.trx._signTypedData(
           orderDomain,
           orderType,
-          orderData
+          tOrderData
         );
         console.log("signature: ", signature);
         setTronOrderSignedData(signature);
